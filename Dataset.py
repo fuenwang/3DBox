@@ -108,7 +108,9 @@ class BatchDataset:
                         diff = abs(centerAngle[i] - LocalAngle)
                         if diff > np.pi:
                             diff = 2 * np.pi - diff
-                        if diff <= intervalAngle / 2 + self.overlap:
+                        #if diff <= intervalAngle / 2 + self.overlap:
+                        #    confidence[i] = 1
+                        if diff < intervalAngle / 2:
                             confidence[i] = 1
                     n = np.sum(confidence)
                     data.append({

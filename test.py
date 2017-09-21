@@ -23,20 +23,26 @@ def Batch2Image(batch):
     return img
 
 if __name__ == '__main__':
-    bins = 3
+    bins = 8
     w = 1
     alpha = 1
     data = Dataset.ImageDataset('../Kitti/training')
     data = Dataset.BatchDataset(data, 1, bins)
     #print 'a'    
     model = torch.load('model.pkl').cuda()
+    model.eval()
+    #for param in model.confidence.parameters():
+    #    print param
+    #exit()
     #print 'b'
     #model = Model.Model()
+    total = 0
+    right = 0
     for epoch in range(1):
-        for i in range(1):
+        for i in range(7000):
             #print '1'
-            for j in range(1):
-                batch, confidence, ntheta, angleDiff, dimGT, angle = data.Next()
+            #for j in range(20):
+            batch, confidence, ntheta, angleDiff, dimGT, angle, Ry, ThetaRay = data.Next()
             #print '2'
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
             confidence = Variable(torch.FloatTensor(confidence), requires_grad=False).cuda()
@@ -46,25 +52,43 @@ if __name__ == '__main__':
             #print 'SSS'         
             [orient, conf, dim] = model(batch)
             #print 'GG'
-            orient = orient.cpu().data.numpy()[0, :, :]
+            #orient = orient.cpu().data.numpy()[0, :, :]
             conf = conf.cpu().data.numpy()[0, :]
             #print orient
-            print conf
-            print confidence
-            print angle / np.pi * 180
+            #print confidence
             #exit()
             argmax = np.argmax(conf)
             
-            orient = orient[argmax, :]
-            cos = orient[0]
-            sin = orient[1]
+            #orient = orient[argmax, :]
+            #cos = orient[0]
+            #sin = orient[1]
             
             img = Batch2Image(batch)
-            theta = np.arctan2(sin, cos) / np.pi * 180
-            print theta
-            cv2.namedWindow('GG')
-            cv2.imshow('GG', img)
-            cv2.waitKey(0)
+            #theta = np.arctan2(sin, cos) / np.pi * 180
+            #if np.argmax(conf) == np.argmax(confidence.cpu().data.numpy()):
+            #    right += 1
+            confidence = confidence.cpu().data.numpy()[0, :]
+            #print confidence
+            #print conf
+            #exit()
+            #print confidence
+            if confidence[np.argmax(conf)] == 1:
+                right += 1
+            total += 1
+            if i % 25 == 0:
+                print '===='
+                print np.argmax(conf)
+                print np.argmax(confidence)
+                #print conf
+                #print confidence
+                print '%ld %%'%(float(right) / total * 100)
+                print '===='
+            #print angle / np.pi * 180
+            #print theta
+            #print theta + data.centerAngle[argmax] / np.pi * 180
+            #cv2.namedWindow('GG')
+            #cv2.imshow('GG', img)
+            #cv2.waitKey(0)
 
 
 
