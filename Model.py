@@ -51,29 +51,30 @@ class Model(nn.Module):
 
         self.orientation = nn.Sequential(
                     nn.Linear(512 * 7 * 7, 256),
-                    nn.ReLU(True),
+                    nn.LeakyReLU(True),
                     nn.Dropout(),
                     nn.Linear(256, 256),
-                    nn.ReLU(True),
+                    nn.LeakyReLU(True),
                     nn.Dropout(),
                     nn.Linear(256, bins*2) # to get sin and cos
                 )
         self.confidence = nn.Sequential(
                     nn.Linear(512 * 7 * 7, 256),
-                    nn.ReLU(True),
+                    nn.LeakyReLU(True),
                     nn.Dropout(),
                     nn.Linear(256, 256),
-                    nn.ReLU(True),
+                    nn.LeakyReLU(True),
                     nn.Dropout(),
                     nn.Linear(256, bins),
                     nn.Softmax()
+                    #nn.Sigmoid()
                 )
         self.dimension = nn.Sequential(
                     nn.Linear(512 * 7 * 7, 512),
-                    nn.ReLU(True),
+                    nn.LeakyReLU(True),
                     nn.Dropout(),
                     nn.Linear(512, 512),
-                    nn.ReLU(True),
+                    nn.LeakyReLU(True),
                     nn.Dropout(),
                     nn.Linear(512, 3)
                 )
@@ -93,41 +94,47 @@ class Model(nn.Module):
 
 if __name__ == '__main__':
     bins = 3
-    w = 1
+    w = 2
     alpha = 1
     data = Dataset.ImageDataset('../Kitti/training')
     data = Dataset.BatchDataset(data, 8, bins)
     
-    vgg = torch.load('model/vgg16.pkl').cuda()
-    model = Model(features = vgg.features, bins=bins).cuda()
-    #model = torch.load('model.pkl').cuda()
+    #vgg = torch.load('model/vgg16.pkl').cuda()
+    #model = Model(features = vgg.features, bins=bins).cuda()
+    model = torch.load('model.pkl').cuda()
     opt_SGD = torch.optim.SGD(model.parameters(), lr=0.0001)
-    conf_LossFunc = nn.MSELoss().cuda()
+    #conf_LossFunc = nn.MSELoss().cuda()
+    conf_LossFunc = nn.MultiLabelMarginLoss()
     #conf_LossFunc = nn.NLLLoss().cuda()
     for epoch in range(25):
         for i in range(2000):
-            batch, confidence, ntheta, angleDiff, dimGT = data.Next()
+            batch, confidence, ntheta, angleDiff, dimGT, LocalAngle, Ry, ThetaRay = data.Next()
             #print dimGT
             #exit()
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
-            confidence = Variable(torch.FloatTensor(confidence), requires_grad=False).cuda()
+            confidence = Variable(torch.LongTensor(confidence.astype(np.int)), requires_grad=False).cuda()
             ntheta = Variable(torch.FloatTensor(ntheta), requires_grad=False).cuda() 
             angleDiff = Variable(torch.FloatTensor(angleDiff), requires_grad=False).cuda()
             dimGT = Variable(torch.FloatTensor(dimGT), requires_grad=False).cuda()
-            
             [orient, conf, dim] = model(batch)
-            #print orient**2
-            #exit()
             #print conf
-            #print confidence
+            #exit()
             conf_loss = conf_LossFunc(conf, confidence)
             orient_loss = OrientationLoss(orient, angleDiff, confidence)
             #dim_loss = conf_LossFunc(dim, dimGT)
             loss_theta = conf_loss + w * (1 - orient_loss)
             loss = loss_theta
+            if i % 15 == 0:
+                print 'loss_conf'
+                print conf_loss
+                print 'loss_orient'
+                print (1 - orient_loss)
+                print 'total'
+                print loss
+                print '======='
             #loss = alpha * dim_loss + loss_theta
             if i % 150 == 0:
-                print loss
+                #print loss
                 torch.save(model, 'model.pkl')
             opt_SGD.zero_grad()
             loss.backward()

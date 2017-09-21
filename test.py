@@ -6,136 +6,65 @@ import Dataset
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+from Model import Model
 from torch.autograd import Variable
 
-#def OrientationLoss(orient, orientGT)
-def OrientationLoss(orient, angleDiff, confGT):
-    #
-    # orid = [sin(delta), cos(delta)] shape = [batch, bins, 2]
-    # angleDiff = GT - center, shape = [batch, bins]
-    #
-    [batch, _, bins] = orient.size()
-    cos_diff = torch.cos(angleDiff)
-    sin_diff = torch.sin(angleDiff)
-    cos_ori = orient[:, :, 0]
-    sin_ori = orient[:, :, 1]
-    mask1 = (confGT != 0)
-    mask2 = (confGT == 0)
-    count = torch.sum(mask1, dim=1)
-    #print cos_ori
-    #print sin_ori
-    #print orient
-    #print cos_diff
-    #print cos_ori
-    #print count
-    tmp = cos_diff * cos_ori + sin_diff * sin_ori
-    #print tmp
-    tmp[mask2] = 0
-    total = torch.sum(tmp, dim = 1)
-    #print total
-    count = count.type(torch.FloatTensor).cuda()
-    #print count
-    #print total
-    total = total / count
-    #print total.requires_grad
-    return torch.sum(total) / batch
-    #print total
-    #exit()
 
-class Model(nn.Module):
-    def __init__(self, features, bins=2, w = 0.4):
-        super(Model, self).__init__()
-        self.bins = bins
-        self.w = w
-        self.features = features
+def Batch2Image(batch):
+    img = np.zeros([224, 224, 3], np.float32)
+    try:
+        batch = batch.cpu().data.numpy()
+    except:
+        pass
 
-        self.orientation = nn.Sequential(
-                    nn.Linear(512 * 7 * 7, 256),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(256, 256),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(256, bins*2) # to get sin and cos
-                )
-        self.confidence = nn.Sequential(
-                    nn.Linear(512 * 7 * 7, 256),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(256, 256),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(256, bins),
-                    nn.Softmax()
-                )
-        self.dimension = nn.Sequential(
-                    nn.Linear(512 * 7 * 7, 512),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(512, 512),
-                    nn.ReLU(True),
-                    nn.Dropout(),
-                    nn.Linear(512, 3)
-                )
-
-
-    def forward(self, x):
-        x = self.features(x) # 512 x 7 x 7
-        x = x.view(-1, 512 * 7 * 7)
-        orientation = self.orientation(x)
-        orientation = orientation.view(-1, self.bins, 2)
-        orientation = F.normalize(orientation, dim=1)
-        confidence = self.confidence(x)
-        dimension = self.dimension(x)
-        return orientation, confidence, dimension
-
-
+    img[:, :, 0] = batch[0, 2, :, :]
+    img[:, :, 1] = batch[0, 1, :, :]
+    img[:, :, 2] = batch[0, 0, :, :]
+    return img
 
 if __name__ == '__main__':
     bins = 3
     w = 1
     alpha = 1
     data = Dataset.ImageDataset('../Kitti/training')
-    data = Dataset.BatchDataset(data, 8, bins)
-    
-    vgg = torch.load('model/vgg16.pkl').cuda()
-    model = Model(features = vgg.features, bins=bins).cuda()
-    #model = torch.load('model.pkl').cuda()
-    opt_SGD = torch.optim.SGD(model.parameters(), lr=0.0001)
-    conf_LossFunc = nn.MSELoss().cuda()
-    #conf_LossFunc = nn.NLLLoss().cuda()
-    for epoch in range(25):
-        for i in range(2000):
-            batch, confidence, ntheta, angleDiff, dimGT = data.Next()
-            #print dimGT
-            #exit()
+    data = Dataset.BatchDataset(data, 1, bins)
+    #print 'a'    
+    model = torch.load('model.pkl').cuda()
+    #print 'b'
+    #model = Model.Model()
+    for epoch in range(1):
+        for i in range(1):
+            #print '1'
+            for j in range(1):
+                batch, confidence, ntheta, angleDiff, dimGT, angle = data.Next()
+            #print '2'
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
             confidence = Variable(torch.FloatTensor(confidence), requires_grad=False).cuda()
             ntheta = Variable(torch.FloatTensor(ntheta), requires_grad=False).cuda() 
             angleDiff = Variable(torch.FloatTensor(angleDiff), requires_grad=False).cuda()
             dimGT = Variable(torch.FloatTensor(dimGT), requires_grad=False).cuda()
-            
+            #print 'SSS'         
             [orient, conf, dim] = model(batch)
-            #print orient**2
+            #print 'GG'
+            orient = orient.cpu().data.numpy()[0, :, :]
+            conf = conf.cpu().data.numpy()[0, :]
+            #print orient
+            print conf
+            print confidence
+            print angle / np.pi * 180
             #exit()
-            #print conf
-            #print confidence
-            conf_loss = conf_LossFunc(conf, confidence)
-            orient_loss = OrientationLoss(orient, angleDiff, confidence)
-            #dim_loss = conf_LossFunc(dim, dimGT)
-            loss_theta = conf_loss + w * (1 - orient_loss)
-            loss = loss_theta
-            #loss = alpha * dim_loss + loss_theta
-            if i % 150 == 0:
-                print loss
-                torch.save(model, 'model.pkl')
-            opt_SGD.zero_grad()
-            loss.backward()
-            opt_SGD.step() 
-    torch.save(model, 'model.pkl')
-
-
-
+            argmax = np.argmax(conf)
+            
+            orient = orient[argmax, :]
+            cos = orient[0]
+            sin = orient[1]
+            
+            img = Batch2Image(batch)
+            theta = np.arctan2(sin, cos) / np.pi * 180
+            print theta
+            cv2.namedWindow('GG')
+            cv2.imshow('GG', img)
+            cv2.waitKey(0)
 
 
 

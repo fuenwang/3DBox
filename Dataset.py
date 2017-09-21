@@ -2,6 +2,7 @@ import os
 import sys
 import cv2
 import glob
+import test
 import numpy as np
 
 
@@ -30,7 +31,15 @@ class ImageDataset:
                 Dimension = [line[8], line[9], line[10]] # height, width, length
                 Location = [line[11], line[12], line[13]] # x, y, z
                 ThetaRay = (np.arctan2(Location[2], Location[0])) / np.pi * 180
-                LocalAngle = (-Ry - ThetaRay) / 180 * np.pi
+                if Ry > 0:
+                    LocalAngle = (180 - Ry) + (180 - ThetaRay)
+                else:
+                    LocalAngle = 360 - (ThetaRay + Ry)
+                if LocalAngle > 360:
+                    LocalAngle -= 360
+                #LocalAngle = Ry - ThetaRay
+                LocalAngle = LocalAngle / 180 * np.pi
+
                 if LocalAngle < 0:
                     LocalAngle += np.pi
                 buf.append({
@@ -51,9 +60,9 @@ class ImageDataset:
     def GetImage(self, idx):
         name = '%s/%s.png'%(self.img_path, self.IDLst[idx])
         img = cv2.imread(name, cv2.IMREAD_COLOR).astype(np.float) / 255
-        img[:, :, 0] = (img[:, :, 0] - 0.406) / 0.225
-        img[:, :, 1] = (img[:, :, 1] - 0.456) / 0.224
-        img[:, :, 2] = (img[:, :, 2] - 0.485) / 0.229
+        #img[:, :, 0] = (img[:, :, 0] - 0.406) / 0.225
+        #img[:, :, 1] = (img[:, :, 1] - 0.456) / 0.224
+        #img[:, :, 2] = (img[:, :, 2] - 0.485) / 0.229
         return img
 
     def __len__(self):
@@ -109,7 +118,9 @@ class BatchDataset:
                                 'Dimension': label['Dimension'],
                                 'LocalAngle': LocalAngle,
                                 'Confidence': confidence,
-                                'Ntheta':n
+                                'Ntheta':n,
+                                'Ry': label['Ry'],
+                                'ThetaRay': label['ThetaRay']
                             })
         return data
 
@@ -137,7 +148,7 @@ class BatchDataset:
             batch[one, 1, :, :] = crop[:, :, 1]
             batch[one, 2, :, :] = crop[:, :, 0]
             confidence[one, :] = data['Confidence'][:]
-            confidence[one, :] /= np.sum(confidence[one, :])
+            #confidence[one, :] /= np.sum(confidence[one, :])
             ntheta[one] = data['Ntheta']
             angleDiff[one, :] = data['LocalAngle'] - self.centerAngle
             dim[one, :] = data['Dimension']
@@ -145,9 +156,30 @@ class BatchDataset:
                 self.idx += 1
             else:
                 self.idx = 0
-        return batch, confidence, ntheta, angleDiff, dim
+        return batch, confidence, ntheta, angleDiff, dim, data['LocalAngle'], data['Ry'], data['ThetaRay']
 
 
 if __name__ == '__main__':
     data = ImageDataset('../Kitti/training')
-    data = BatchDataset(data, batchSize=2)
+    data = BatchDataset(data, batchSize=1)
+
+    for i in range(91):
+        batch, confidence, ntheta, angleDiff, dim, angle, ry , ray= data.Next()
+    img = test.Batch2Image(batch)
+    print ray
+    print ry 
+    print angle / np.pi * 180
+
+
+    print confidence
+    cv2.namedWindow('GG')
+    cv2.imshow('GG', img)
+    cv2.waitKey(0)
+
+
+
+
+
+
+
+
