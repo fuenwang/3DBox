@@ -30,6 +30,8 @@ if __name__ == '__main__':
     data = Dataset.BatchDataset(data, 1, bins)
     #print 'a'    
     model = torch.load('model.pkl').cuda()
+    #torch.save(model.state_dict(), 'model.pkl')
+    #exit()
     model.eval()
     #for param in model.confidence.parameters():
     #    print param
@@ -48,47 +50,32 @@ if __name__ == '__main__':
             confidence = Variable(torch.FloatTensor(confidence), requires_grad=False).cuda()
             ntheta = Variable(torch.FloatTensor(ntheta), requires_grad=False).cuda() 
             angleDiff = Variable(torch.FloatTensor(angleDiff), requires_grad=False).cuda()
-            dimGT = Variable(torch.FloatTensor(dimGT), requires_grad=False).cuda()
-            #print 'SSS'         
+            #dimGT = Variable(torch.FloatTensor(dimGT), requires_grad=False).cuda()
             [orient, conf, dim] = model(batch)
-            #print 'GG'
             orient = orient.cpu().data.numpy()[0, :, :]
             conf = conf.cpu().data.numpy()[0, :]
-            #print orient
-            #print confidence
-            #exit()
+            dim = dim.cpu().data.numpy()[0, :]
             argmax = np.argmax(conf)
-            #print conf
-            #print orient
             orient = orient[argmax, :]
             cos = orient[0]
             sin = orient[1]
             
             img = Batch2Image(batch)
             theta = np.arctan2(sin, cos) / np.pi * 180
-            #if np.argmax(conf) == np.argmax(confidence.cpu().data.numpy()):
-            #    right += 1
             confidence = confidence.cpu().data.numpy()[0, :]
-            #print confidence
-            #print conf
-            #exit()
-            #print confidence
             if confidence[np.argmax(conf)] == 1:
                 right += 1
             total += 1
             if i % 20 == 0:
                 print '===='
-                print np.argmax(conf)
-                print np.argmax(confidence)
-                #print conf
-                #print confidence
-                print '%ld %%'%(float(right) / total * 100)
-                print angle / np.pi * 180
-                #print theta
+                print 'Class: %ld %%'%(float(right) / total * 100)
+                print 'GT angle: %ld'%(angle / np.pi * 180)
                 theta =  theta + data.centerAngle[argmax] / np.pi * 180
                 if theta < 0:
                     theta += 360
-                print theta
+                print 'Predict angle: %ld'%theta
+                print 'GT dim: ', dimGT
+                print 'Predict dim: ', dim
                 print '===='
             #cv2.namedWindow('GG')
             #cv2.imshow('GG', img)

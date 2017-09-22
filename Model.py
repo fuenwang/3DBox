@@ -49,7 +49,6 @@ class Model(nn.Module):
         self.bins = bins
         self.w = w
         self.features = features
-        #'''
         self.orientation = nn.Sequential(
                     nn.Linear(512 * 7 * 7, 256),
                     nn.ReLU(True),
@@ -59,7 +58,6 @@ class Model(nn.Module):
                     nn.Dropout(),
                     nn.Linear(256, bins*2) # to get sin and cos
                 )
-        #'''
         self.confidence = nn.Sequential(
                     nn.Linear(512 * 7 * 7, 256),
                     nn.ReLU(True),
@@ -71,7 +69,6 @@ class Model(nn.Module):
                     #nn.Softmax()
                     #nn.Sigmoid()
                 )
-        '''
         self.dimension = nn.Sequential(
                     nn.Linear(512 * 7 * 7, 512),
                     nn.ReLU(True),
@@ -81,7 +78,6 @@ class Model(nn.Module):
                     nn.Dropout(),
                     nn.Linear(512, 3)
                 )
-        '''
 
     def forward(self, x):
         x = self.features(x) # 512 x 7 x 7
@@ -90,8 +86,8 @@ class Model(nn.Module):
         orientation = orientation.view(-1, self.bins, 2)
         orientation = F.normalize(orientation, dim=1)
         confidence = self.confidence(x)
-        #dimension = self.dimension(x)
-        return orientation, confidence, None
+        dimension = self.dimension(x)
+        return orientation, confidence, dimension
 
 
 
@@ -118,10 +114,9 @@ if __name__ == '__main__':
     model = torch.load('model.pkl').cuda()
 
     opt_SGD = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
-    #conf_LossFunc = nn.MSELoss().cuda()
+    dim_LossFunc = nn.MSELoss().cuda()
     #conf_LossFunc = nn.MultiLabelMarginLoss()
-    conf_LossFunc = nn.CrossEntropyLoss()
-    #conf_LossFunc = nn.NLLLoss().cuda()
+    conf_LossFunc = nn.CrossEntropyLoss().cuda()
     for epoch in range(25):
         for i in range(2000):
             batch, confidence, confidence_multi, ntheta, angleDiff, dimGT, LocalAngle, Ry, ThetaRay = data.Next()
@@ -145,15 +140,17 @@ if __name__ == '__main__':
             #print conf
             conf_loss = conf_LossFunc(conf, confidence_arg)
             orient_loss = OrientationLoss(orient, angleDiff, confidence_multi)
-            #dim_loss = conf_LossFunc(dim, dimGT)
+            dim_loss = dim_LossFunc(dim, dimGT)
             loss_theta = conf_loss + w * orient_loss
-            loss = loss_theta
+            loss = alpha * dim_loss + loss_theta
             if i % 15 == 0:
                 #print confidence
                 print 'loss_conf'
                 print conf_loss
                 print 'loss_orient'
                 print orient_loss
+                print 'loss_dim'
+                print dim_loss
                 print 'total'
                 print loss
                 print '======='
