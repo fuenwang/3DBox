@@ -52,19 +52,20 @@ if __name__ == '__main__':
             #print 'SSS'         
             [orient, conf, dim] = model(batch)
             #print 'GG'
-            #orient = orient.cpu().data.numpy()[0, :, :]
+            orient = orient.cpu().data.numpy()[0, :, :]
             conf = conf.cpu().data.numpy()[0, :]
             #print orient
             #print confidence
             #exit()
             argmax = np.argmax(conf)
-            
-            #orient = orient[argmax, :]
-            #cos = orient[0]
-            #sin = orient[1]
+            #print conf
+            #print orient
+            orient = orient[argmax, :]
+            cos = orient[0]
+            sin = orient[1]
             
             img = Batch2Image(batch)
-            #theta = np.arctan2(sin, cos) / np.pi * 180
+            theta = np.arctan2(sin, cos) / np.pi * 180
             #if np.argmax(conf) == np.argmax(confidence.cpu().data.numpy()):
             #    right += 1
             confidence = confidence.cpu().data.numpy()[0, :]
@@ -75,17 +76,20 @@ if __name__ == '__main__':
             if confidence[np.argmax(conf)] == 1:
                 right += 1
             total += 1
-            if i % 25 == 0:
+            if i % 30 == 0:
                 print '===='
                 print np.argmax(conf)
                 print np.argmax(confidence)
                 #print conf
                 #print confidence
                 print '%ld %%'%(float(right) / total * 100)
+                print angle / np.pi * 180
+                #print theta
+                theta =  theta + data.centerAngle[argmax] / np.pi * 180
+                if theta < 0:
+                    theta += 360
+                print theta
                 print '===='
-            #print angle / np.pi * 180
-            #print theta
-            #print theta + data.centerAngle[argmax] / np.pi * 180
             #cv2.namedWindow('GG')
             #cv2.imshow('GG', img)
             #cv2.waitKey(0)
