@@ -101,7 +101,7 @@ if __name__ == '__main__':
     alpha = 1
     data = Dataset.ImageDataset('../Kitti/training')
     data = Dataset.BatchDataset(data, 8, bins)
-    
+    '''
     #vgg = torch.load('model/vgg16.pkl').cuda()
     vgg = vgg.vgg19_bn(pretrained=False) 
 
@@ -114,8 +114,8 @@ if __name__ == '__main__':
             model_dict[key] = param[key]
     model.load_state_dict(model_dict)
     #exit()
-
-
+    '''
+    model = torch.load('model.pkl').cuda()
 
     opt_SGD = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
     #conf_LossFunc = nn.MSELoss().cuda()
@@ -124,21 +124,13 @@ if __name__ == '__main__':
     #conf_LossFunc = nn.NLLLoss().cuda()
     for epoch in range(25):
         for i in range(2000):
-            batch, confidence, ntheta, angleDiff, dimGT, LocalAngle, Ry, ThetaRay = data.Next()
+            batch, confidence, confidence_multi, ntheta, angleDiff, dimGT, LocalAngle, Ry, ThetaRay = data.Next()
             #print confidence
             #continue
-            #exit()
-            #print confidence
-            #exit()
-            #print confidence
-            #print np.argmax(confidence, axis = 1)
-            #exit()
             confidence_arg = np.argmax(confidence, axis = 1)
-            #confidence_arg[:] = 2
-            #print dimGT
-            #exit()
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
             confidence = Variable(torch.LongTensor(confidence.astype(np.int)), requires_grad=False).cuda()
+            confidence_multi = Variable(torch.LongTensor(confidence_multi.astype(np.int)), requires_grad=False).cuda()
             ntheta = Variable(torch.FloatTensor(ntheta), requires_grad=False).cuda() 
             angleDiff = Variable(torch.FloatTensor(angleDiff), requires_grad=False).cuda()
             dimGT = Variable(torch.FloatTensor(dimGT), requires_grad=False).cuda()
@@ -152,7 +144,7 @@ if __name__ == '__main__':
             #print confidence
             #print conf
             conf_loss = conf_LossFunc(conf, confidence_arg)
-            orient_loss = OrientationLoss(orient, angleDiff, confidence)
+            orient_loss = OrientationLoss(orient, angleDiff, confidence_multi)
             #dim_loss = conf_LossFunc(dim, dimGT)
             loss_theta = conf_loss + w * orient_loss
             loss = loss_theta

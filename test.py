@@ -42,7 +42,7 @@ if __name__ == '__main__':
         for i in range(7000):
             #print '1'
             #for j in range(20):
-            batch, confidence, ntheta, angleDiff, dimGT, angle, Ry, ThetaRay = data.Next()
+            batch, confidence, confidence_multi, ntheta, angleDiff, dimGT, angle, Ry, ThetaRay = data.Next()
             #print '2'
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
             confidence = Variable(torch.FloatTensor(confidence), requires_grad=False).cuda()
@@ -76,7 +76,7 @@ if __name__ == '__main__':
             if confidence[np.argmax(conf)] == 1:
                 right += 1
             total += 1
-            if i % 30 == 0:
+            if i % 20 == 0:
                 print '===='
                 print np.argmax(conf)
                 print np.argmax(confidence)
