@@ -66,7 +66,7 @@ if __name__ == '__main__':
             if confidence[np.argmax(conf)] == 1:
                 right += 1
             total += 1
-            if i % 20 == 0:
+            if i % 40 == 0:
                 print '===='
                 print 'Class: %ld %%'%(float(right) / total * 100)
                 print 'GT angle: %ld'%(angle / np.pi * 180)
