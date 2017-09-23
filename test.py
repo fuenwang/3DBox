@@ -27,11 +27,11 @@ if __name__ == '__main__':
     w = 1
     alpha = 1
     data = Dataset.ImageDataset('../Kitti/training')
-    data = Dataset.BatchDataset(data, 1, bins)
+    data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
     model = torch.load('model.pkl').cuda()
-    torch.save(model.state_dict(), 'model.pkl')
-    exit()
+    #torch.save(model.state_dict(), 'model.pkl')
+    #exit()
     model.eval()
     #for param in model.confidence.parameters():
     #    print param
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     total = 0
     right = 0
     for epoch in range(1):
-        for i in range(7000):
+        for i in range(5000):
             #print '1'
             #for j in range(20):
             batch, confidence, confidence_multi, ntheta, angleDiff, dimGT, angle, Ry, ThetaRay = data.Next()

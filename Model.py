@@ -99,7 +99,7 @@ if __name__ == '__main__':
     data = Dataset.BatchDataset(data, 8, bins)
     #'''
     #vgg = torch.load('model/vgg16.pkl').cuda()
-    vgg = vgg.vgg19_bn(pretrained=False) 
+    vgg = vgg.vgg19_bn(pretrained=True) 
     #param = torch.load('model/model_confidence_pre.pkl')
     model = Model(features=vgg.features, bins=bins).cuda()
 
