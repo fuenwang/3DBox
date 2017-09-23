@@ -69,13 +69,12 @@ class ImageDataset:
         return len(self.IDLst)
 
 class BatchDataset:
-    def __init__(self, imgDataset, batchSize = 1, bins = 3, overlap = 25/180.0 * np.pi):
+    def __init__(self, imgDataset, batchSize = 1, bins = 3, overlap = 25/180.0 * np.pi, mode='train'):
         self.imgDataset = imgDataset
         self.batchSize = batchSize
-        self.idx = 0
         self.bins = bins
         self.overlap = overlap
-
+        self.mode = mode
         centerAngle = np.zeros(bins)
         interval = 2 * np.pi / bins
         for i in range(1, bins):
@@ -85,6 +84,12 @@ class BatchDataset:
         self.intervalAngle = interval
         self.info = self.getBatchInfo()
         self.Total = len(self.info)
+        if mode == 'train':
+            self.idx = 0
+            self.num_of_patch = 35570
+        else:
+            self.idx = 35570
+            self.num_of_patch = 5000
         #print len(self.info)
         #print self.info
     def getBatchInfo(self):
@@ -158,17 +163,26 @@ class BatchDataset:
             ntheta[one] = data['Ntheta']
             angleDiff[one, :] = data['LocalAngle'] - self.centerAngle
             dim[one, :] = data['Dimension']
-            if self.idx + 1 < self.Total:
-                self.idx += 1
+            if self.mode == 'train':
+                if self.idx + 1 < self.num_of_patch:
+                    self.idx += 1
+                else:
+                    self.idx = 0
             else:
-                self.idx = 0
+                if self.idx + 1 < self.Total:
+                    self.idx += 1
+                else:
+                    self.idx = 35570
         return batch, confidence, confidence_multi, ntheta, angleDiff, dim, data['LocalAngle'], data['Ry'], data['ThetaRay']
 
 
 if __name__ == '__main__':
     imgdata = ImageDataset('../Kitti/training')
     data = BatchDataset(imgdata, batchSize=1)
-
+    
+    print len(imgdata)
+    print len(data.info)
+    exit()
     for i in range(1):
         batch, confidence, confidence_multi, ntheta, angleDiff, dim, angle, ry , ray= data.Next()
         bigid = data.info[data.idx - 1]['Index']

@@ -30,8 +30,8 @@ if __name__ == '__main__':
     data = Dataset.BatchDataset(data, 1, bins)
     #print 'a'    
     model = torch.load('model.pkl').cuda()
-    #torch.save(model.state_dict(), 'model.pkl')
-    #exit()
+    torch.save(model.state_dict(), 'model.pkl')
+    exit()
     model.eval()
     #for param in model.confidence.parameters():
     #    print param

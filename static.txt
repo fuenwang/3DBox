@@ -1,0 +1,8 @@
+Total
+7481 images
+40570 cropped patch
+
+split into:
+
+35570 for training
+5000 for validation
