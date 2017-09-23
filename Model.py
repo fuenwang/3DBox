@@ -97,28 +97,27 @@ if __name__ == '__main__':
     alpha = 1
     data = Dataset.ImageDataset('../Kitti/training')
     data = Dataset.BatchDataset(data, 8, bins)
-    '''
+    #'''
     #vgg = torch.load('model/vgg16.pkl').cuda()
     vgg = vgg.vgg19_bn(pretrained=False) 
-
-    param = torch.load('model/model_confidence_pre.pkl')
+    #param = torch.load('model/model_confidence_pre.pkl')
     model = Model(features=vgg.features, bins=bins).cuda()
 
-    model_dict = model.state_dict()
-    for key, val in model_dict.items():
-        if key in param:
-            model_dict[key] = param[key]
-    model.load_state_dict(model_dict)
+    #model_dict = model.state_dict()
+    #for key, val in model_dict.items():
+    #    if key in param:
+    #        model_dict[key] = param[key]
+    #model.load_state_dict(model_dict)
     #exit()
-    '''
-    model = torch.load('model.pkl').cuda()
+    #'''
+    #model = torch.load('model.pkl').cuda()
 
     opt_SGD = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
     dim_LossFunc = nn.MSELoss().cuda()
     #conf_LossFunc = nn.MultiLabelMarginLoss()
     conf_LossFunc = nn.CrossEntropyLoss().cuda()
     for epoch in range(25):
-        for i in range(2000):
+        for i in range(5000):
             batch, confidence, confidence_multi, ntheta, angleDiff, dimGT, LocalAngle, Ry, ThetaRay = data.Next()
             #print confidence
             #continue

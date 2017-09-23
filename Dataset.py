@@ -178,11 +178,7 @@ class BatchDataset:
 
 if __name__ == '__main__':
     imgdata = ImageDataset('../Kitti/training')
-    data = BatchDataset(imgdata, batchSize=1)
-    
-    print len(imgdata)
-    print len(data.info)
-    exit()
+    data = BatchDataset(imgdata, batchSize=1, mode='train')
     for i in range(1):
         batch, confidence, confidence_multi, ntheta, angleDiff, dim, angle, ry , ray= data.Next()
         bigid = data.info[data.idx - 1]['Index']
