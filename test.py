@@ -30,7 +30,7 @@ if __name__ == '__main__':
     data = Dataset.ImageDataset('../Kitti/training')
     data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
-    param = torch.load('model/model_confidence_orient_dimension_8bin.pkl')
+    param = torch.load('exp1/model_confidence_orient_dimension_8bin.pkl')
     VGG = vgg.vgg19_bn(pretrained=False)
     model = Model(features=VGG.features, bins=bins).cuda()
     model.load_state_dict(param)
@@ -97,5 +97,7 @@ if __name__ == '__main__':
     #print 'Avg distance: %lf' %(b / 5000)   
     angle_error = np.array(angle_error)
     dim_error = np.array(dim_error)
+    print np.mean(angle_error)
+    print np.mean(dim_error)
     np.save('exp1/angle_error.npy', angle_error)
     np.save('exp1/dim_error.npy', dim_error)
