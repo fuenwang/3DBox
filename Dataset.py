@@ -31,17 +31,18 @@ class ImageDataset:
                 Dimension = [line[8], line[9], line[10]] # height, width, length
                 Location = [line[11], line[12], line[13]] # x, y, z
                 ThetaRay = (np.arctan2(Location[2], Location[0])) / np.pi * 180
-                if Ry > 0:
-                    LocalAngle = (180 - Ry) + (180 - ThetaRay)
-                else:
-                    LocalAngle = 360 - (ThetaRay + Ry)
+                #if Ry > 0:
+                #    LocalAngle = (180 - Ry) + (180 - ThetaRay)
+                #else:
+                #    LocalAngle = 360 - (ThetaRay + Ry)
+                LocalAngle = 360 - (ThetaRay + Ry)
                 if LocalAngle > 360:
                     LocalAngle -= 360
                 #LocalAngle = Ry - ThetaRay
                 LocalAngle = LocalAngle / 180 * np.pi
 
                 if LocalAngle < 0:
-                    LocalAngle += np.pi
+                    LocalAngle += 2 * np.pi
                 buf.append({
                         'Class': Class,
                         'Box_2D': Box_2D,

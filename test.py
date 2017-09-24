@@ -6,6 +6,7 @@ import Dataset
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision.models import vgg
 from Model import Model
 from torch.autograd import Variable
 
@@ -29,17 +30,17 @@ if __name__ == '__main__':
     data = Dataset.ImageDataset('../Kitti/training')
     data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
-    model = torch.load('model.pkl').cuda()
-    #torch.save(model.state_dict(), 'model.pkl')
-    #exit()
+    param = torch.load('model/model_confidence_orient_dimension_8bin.pkl')
+    VGG = vgg.vgg19_bn(pretrained=False)
+    model = Model(features=VGG.features, bins=bins).cuda()
+    model.load_state_dict(param)
     model.eval()
-    #for param in model.confidence.parameters():
-    #    print param
-    #exit()
-    #print 'b'
-    #model = Model.Model()
+
     total = 0
     right = 0
+
+    a = 0
+    b = 0
     for epoch in range(1):
         for i in range(5000):
             #print '1'
@@ -66,13 +67,24 @@ if __name__ == '__main__':
             if confidence[np.argmax(conf)] == 1:
                 right += 1
             total += 1
+            angle = angle / np.pi * 180
+            theta =  theta + data.centerAngle[argmax] / np.pi * 180
+            
+            error = abs(angle - theta)
+            if error > 180:
+                error = 360 - error
+            a += error
+            dimGT = dimGT[0, :]
+            norm = np.sum(np.abs(dimGT - dim)) / 3
+            b += norm
+            if theta < 0:
+                theta += 360
             if i % 40 == 0:
                 print '===='
+                print Ry
+                print ThetaRay
                 print 'Class: %ld %%'%(float(right) / total * 100)
-                print 'GT angle: %ld'%(angle / np.pi * 180)
-                theta =  theta + data.centerAngle[argmax] / np.pi * 180
-                if theta < 0:
-                    theta += 360
+                print 'GT angle: %ld'%(angle)
                 print 'Predict angle: %ld'%theta
                 print 'GT dim: ', dimGT
                 print 'Predict dim: ', dim
@@ -81,6 +93,6 @@ if __name__ == '__main__':
             #cv2.imshow('GG', img)
             #cv2.waitKey(0)
 
-
-
+    print 'Avg angle error: %lf'%(a / 5000)
+    print 'Avg distance: %lf' %(b / 5000)   
 

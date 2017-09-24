@@ -99,15 +99,15 @@ if __name__ == '__main__':
     data = Dataset.BatchDataset(data, 8, bins)
     #'''
     #vgg = torch.load('model/vgg16.pkl').cuda()
-    vgg = vgg.vgg19_bn(pretrained=True) 
-    #param = torch.load('model/model_confidence_pre.pkl')
+    vgg = vgg.vgg19_bn(pretrained=False) 
+    param = torch.load('model/model_confidence_orient_dimension_2bin.pkl')
     model = Model(features=vgg.features, bins=bins).cuda()
 
     #model_dict = model.state_dict()
     #for key, val in model_dict.items():
     #    if key in param:
     #        model_dict[key] = param[key]
-    #model.load_state_dict(model_dict)
+    model.load_state_dict(param)
     #exit()
     #'''
     #model = torch.load('model.pkl').cuda()
