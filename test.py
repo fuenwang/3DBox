@@ -39,8 +39,8 @@ if __name__ == '__main__':
     total = 0
     right = 0
 
-    a = 0
-    b = 0
+    angle_error = []
+    dim_error = []
     for epoch in range(1):
         for i in range(5000):
             #print '1'
@@ -73,10 +73,10 @@ if __name__ == '__main__':
             error = abs(angle - theta)
             if error > 180:
                 error = 360 - error
-            a += error
+            angle_error.append(error)
             dimGT = dimGT[0, :]
             norm = np.sum(np.abs(dimGT - dim)) / 3
-            b += norm
+            dim_error.append(norm)
             if theta < 0:
                 theta += 360
             if i % 40 == 0:
@@ -93,6 +93,9 @@ if __name__ == '__main__':
             #cv2.imshow('GG', img)
             #cv2.waitKey(0)
 
-    print 'Avg angle error: %lf'%(a / 5000)
-    print 'Avg distance: %lf' %(b / 5000)   
-
+    #print 'Avg angle error: %lf'%(a / 5000)
+    #print 'Avg distance: %lf' %(b / 5000)   
+    angle_error = np.array(angle_error)
+    dim_error = np.array(dim_error)
+    np.save('exp1/angle_error.npy', angle_error)
+    np.save('exp1/dim_error.npy', dim_error)
