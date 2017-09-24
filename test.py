@@ -68,12 +68,11 @@ if __name__ == '__main__':
                 right += 1
             total += 1
             angle = angle / np.pi * 180
-            theta =  theta + data.centerAngle[argmax] / np.pi * 180
-            
+            theta =  theta + data.centerAngle[argmax] / np.pi * 180            
             error = abs(angle - theta)
             if error > 180:
                 error = 360 - error
-            angle_error.append(error)
+            angle_error.append(abs(error))
             dimGT = dimGT[0, :]
             norm = np.sum(np.abs(dimGT - dim)) / 3
             dim_error.append(norm)
