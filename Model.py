@@ -8,6 +8,8 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+#import ipdb
+
 
 #def OrientationLoss(orient, orientGT)
 def OrientationLoss(orient, angleDiff, confGT):
@@ -39,6 +41,7 @@ def OrientationLoss(orient, angleDiff, confGT):
     #print total
     total = total / count
     #print total.requires_grad
+    #ipdb.set_trace()
     return -torch.sum(total) / batch
     #print total
     #exit()
@@ -84,7 +87,7 @@ class Model(nn.Module):
         x = x.view(-1, 512 * 7 * 7)
         orientation = self.orientation(x)
         orientation = orientation.view(-1, self.bins, 2)
-        orientation = F.normalize(orientation, dim=1)
+        orientation = F.normalize(orientation, dim=2)
         confidence = self.confidence(x)
         dimension = self.dimension(x)
         return orientation, confidence, dimension
