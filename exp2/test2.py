@@ -47,6 +47,7 @@ if __name__ == '__main__':
     error_lst = []
     for epoch in range(1):
         for i in range(5000):
+            data.idx = 10
             batch, centerAngle, info = data.EvalBatch()
             P = kittiData.getFrameInfo(info['Index'])['calibration'] ['projection_left']
             box_2D = info['Box_2D']
@@ -72,10 +73,19 @@ if __name__ == '__main__':
             orientation_estimate = pydriver.common.functions.pyNormalizeAngle(np.radians(360 - info['ThetaRay'] - theta))
             orientation_estimate = orientation_estimate / np.pi * 180
             error = abs(orientation_estimate - info['Ry'])
-            #error = abs(theta - info['LocalAngle'])
             if error > 180:
                 error = abs(360 - error)
             error_lst.append(error)
+
+            Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim)
+            print Translation
+            #print info['ID']
+            print info['Location']
+            print error
+            print dimGT
+            print dim
+            sys.exit()
+            #error = abs(theta - info['LocalAngle'])
             if i % 40 == 0:
                 print '===='
                 print info['Ry']

@@ -126,6 +126,7 @@ class BatchDataset:
                                 'Index': idx, # id in Imagedataset
                                 'Box_2D': label['Box_2D'],
                                 'Dimension': label['Dimension'],
+                                'Location': label['Location'],
                                 'LocalAngle': LocalAngle,
                                 'Confidence': confidence,
                                 'ConfidenceMulti': confidence_multi,
