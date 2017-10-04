@@ -31,8 +31,8 @@ if __name__ == '__main__':
     alpha = 1
     path = '../../Kitti/training'
     kittiData = kitti.KITTIObjectsReader(path)
-    print kittiData.getFrameInfo(0) 
-    sys.exit()
+    #print kittiData.getFrameInfo(1)['calibration'] ['projection_left']
+    #sys.exit()
     data = Dataset.ImageDataset(path)
     data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
@@ -49,9 +49,12 @@ if __name__ == '__main__':
     for epoch in range(1):
         for i in range(5000):
             batch, centerAngle, info = data.EvalBatch()
+            P = kittiData.getFrameInfo(info['Index'])['calibration'] ['projection_left']
+            box_2D = info['Box_2D']
+            print P, box_2D
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
             [orient, conf, dim] = model(batch)
-
+            
 
             orient = orient.cpu().data.numpy()[0, :, :]
             conf = conf.cpu().data.numpy()[0, :]
@@ -76,6 +79,8 @@ if __name__ == '__main__':
             norm = np.sum(np.abs(dimGT - dim)) / 3
             dim_error.append(norm)
             total += 1
+
+            sys.exit()
             if i % 40 == 0:
                 print '===='
                 print info['Ry']
