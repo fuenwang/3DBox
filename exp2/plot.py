@@ -1,16 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-angle = np.load('angle_error_train.npy')
+angle = np.load('angle_error.npy')
 angle_mean = np.mean(angle)
 angle_std = np.std(angle)
 print angle_mean
 print angle_std
-dim = np.load('dim_error_train.npy')
+dim = np.load('dim_error.npy')
 dim_mean = np.mean(dim)
 dim_std = np.std(dim)
 print dim_mean
 print dim_std
+dd
 #'''
 plt.subplot('111')
 x_axis = np.arange(5000) + 1

@@ -76,6 +76,7 @@ class BatchDataset:
         self.bins = bins
         self.overlap = overlap
         self.mode = mode
+        self.imgID = None
         centerAngle = np.zeros(bins)
         interval = 2 * np.pi / bins
         for i in range(1, bins):
@@ -176,6 +177,32 @@ class BatchDataset:
                     self.idx = 35570
         return batch, confidence, confidence_multi, ntheta, angleDiff, dim, data['LocalAngle'], data['Ry'], data['ThetaRay']
 
+    def EvalBatch(self):
+        batch = np.zeros([1, 3, 224, 224], np.float) 
+        info = self.info[self.idx]
+        imgID = info['Index']
+        if imgID != self.imgID:
+            self.img = self.imgDataset.GetImage(imgID)
+            self.imgID = imgID
+        pt1 = info['Box_2D'][0]
+        pt2 = info['Box_2D'][1]
+        crop = self.img[pt1[1]:pt2[1]+1, pt1[0]:pt2[0]+1]
+        crop = cv2.resize(crop, (224, 224), cv2.INTER_CUBIC)
+        batch[0, 0, :, :] = crop[:, :, 2]
+        batch[0, 1, :, :] = crop[:, :, 1]
+        batch[0, 2, :, :] = crop[:, :, 0]
+
+        if self.mode == 'train':
+            if self.idx + 1 < self.num_of_patch:
+                self.idx += 1
+            else:
+                self.idx = 0
+        else:
+            if self.idx + 1 < self.Total:
+                self.idx += 1
+            else:
+                self.idx = 35570
+        return batch, self.centerAngle, info 
 
 if __name__ == '__main__':
     imgdata = ImageDataset('../Kitti/training')
