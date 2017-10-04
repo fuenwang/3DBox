@@ -5,6 +5,7 @@ import cv2
 import torch
 import Dataset
 import numpy as np
+from pydriver.datasets import kitti
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import vgg
@@ -28,7 +29,11 @@ if __name__ == '__main__':
     bins = 2
     w = 1
     alpha = 1
-    data = Dataset.ImageDataset('../../Kitti/training')
+    path = '../../Kitti/training'
+    kittiData = kitti.KITTIObjectsReader(path)
+    print kittiData.getFrameInfo(0) 
+    sys.exit()
+    data = Dataset.ImageDataset(path)
     data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
     param = torch.load('model.pkl')

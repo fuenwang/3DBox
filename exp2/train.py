@@ -20,10 +20,10 @@ if __name__ == '__main__':
     data = Dataset.BatchDataset(data, 8, bins)
     #'''
     #vgg = torch.load('model/vgg16.pkl').cuda()
-    vgg = vgg.vgg19_bn(pretrained=True) 
-    #param = torch.load('model.pkl')
+    vgg = vgg.vgg19_bn(pretrained=False) 
+    param = torch.load('model.pkl')
     model = Model.Model(features=vgg.features, bins=bins).cuda()
-    #model.load_state_dict(param)
+    model.load_state_dict(param)
 
     opt_SGD = torch.optim.SGD(model.parameters(), lr=0.0001, momentum=0.9)
     dim_LossFunc = nn.MSELoss().cuda()
