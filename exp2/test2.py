@@ -2,16 +2,17 @@ import os
 import sys
 sys.path.append('..')
 import cv2
+import Eval
 import torch
 import Dataset
 import numpy as np
+import pydriver
 from pydriver.datasets import kitti
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import vgg
 from Model import Model
 from torch.autograd import Variable
-
 
 def Batch2Image(batch):
     img = np.zeros([224, 224, 3], np.float32)
@@ -43,15 +44,15 @@ if __name__ == '__main__':
     model.eval()
 
     total = 0
-
-    angle_error = []
-    dim_error = []
+    error_lst = []
     for epoch in range(1):
         for i in range(5000):
             batch, centerAngle, info = data.EvalBatch()
             P = kittiData.getFrameInfo(info['Index'])['calibration'] ['projection_left']
             box_2D = info['Box_2D']
-            print P, box_2D
+            dimGT = info['Dimension']
+            angle = info['LocalAngle'] / np.pi * 180
+            #print P, box_2D, dimGT
             batch = Variable(torch.FloatTensor(batch), requires_grad=False).cuda()
             [orient, conf, dim] = model(batch)
             
@@ -66,34 +67,23 @@ if __name__ == '__main__':
             
             #img = Batch2Image(batch)
             theta = np.arctan2(sin, cos) / np.pi * 180
-            angle = info['LocalAngle'] / np.pi * 180
-            theta =  theta + centerAngle[argmax] / np.pi * 180            
-            if theta < 0:
-                theta += 360
-            error = abs(angle - theta)
+            theta =  theta + centerAngle[argmax] / np.pi * 180
+             
+            orientation_estimate = pydriver.common.functions.pyNormalizeAngle(np.radians(360 - info['ThetaRay'] - theta))
+            orientation_estimate = orientation_estimate / np.pi * 180
+            error = abs(orientation_estimate - info['Ry'])
+            #error = abs(theta - info['LocalAngle'])
             if error > 180:
-                error = 360 - error
-            angle_error.append(abs(error))
-
-            dimGT = info['Dimension']
-            norm = np.sum(np.abs(dimGT - dim)) / 3
-            dim_error.append(norm)
-            total += 1
-
-            sys.exit()
+                error = abs(360 - error)
+            error_lst.append(error)
             if i % 40 == 0:
                 print '===='
                 print info['Ry']
                 print info['ThetaRay']
-                print 'GT angle: %ld'%(angle)
-                print 'Predict angle: %ld'%theta
+                print 'GT Ry: %ld'%(info['Ry'])
+                print 'Predict Ry: %ld'%(orientation_estimate)
                 print 'GT dim: ', dimGT
                 print 'Predict dim: ', dim
                 print '===='
-
-    angle_error = np.array(angle_error)
-    dim_error = np.array(dim_error)
-    print np.mean(angle_error)
-    print np.mean(dim_error)
-    np.save('angle_error.npy', angle_error)
-    np.save('dim_error.npy', dim_error)
+    print 'Mean error: ', np.mean(error_lst)
+    print 'Std: ', np.std(error_lst)
