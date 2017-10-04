@@ -29,7 +29,7 @@ if __name__ == '__main__':
     w = 1
     alpha = 1
     data = Dataset.ImageDataset('../../Kitti/training')
-    data = Dataset.BatchDataset(data, 1, bins, mode='eval')
+    data = Dataset.BatchDataset(data, 1, bins, mode='train')
     #print 'a'    
     param = torch.load('model.pkl')
     VGG = vgg.vgg19_bn(pretrained=False)
@@ -99,5 +99,5 @@ if __name__ == '__main__':
     dim_error = np.array(dim_error)
     print np.mean(angle_error)
     print np.mean(dim_error)
-    np.save('angle_error.npy', angle_error)
-    np.save('dim_error.npy', dim_error)
+    np.save('angle_error_train.npy', angle_error)
+    np.save('dim_error_train.npy', dim_error)
