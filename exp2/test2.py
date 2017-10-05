@@ -32,8 +32,8 @@ if __name__ == '__main__':
     alpha = 1
     path = '../../Kitti/training'
     kittiData = kitti.KITTIObjectsReader(path)
-    #print kittiData.getFrameInfo(1)['calibration'] ['projection_left']
-    #sys.exit()
+    print kittiData.getFrameInfo(0)['calibration']
+    sys.exit()
     data = Dataset.ImageDataset(path)
     data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
@@ -77,7 +77,9 @@ if __name__ == '__main__':
                 error = abs(360 - error)
             error_lst.append(error)
 
-            Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim)
+            #Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim)
+            Translation = Eval.GetTranslation(P, box_2D, info['Ry'], np.array(dimGT))
+            print box_2D, info['Ry'], dimGT
             print Translation
             #print info['ID']
             print info['Location']
