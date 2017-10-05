@@ -42,7 +42,7 @@ def Error(x, P, homo_vertex, x_bound, y_bound, tmp):
 
     #error = np.zeros(4, np.float)
     error = np.abs([min_x - x_bound[0], max_x - x_bound[1], min_y - y_bound[0], max_y - y_bound[1]])
-    #error = np.abs([min_x - x_bound[0], 0, min_y - y_bound[0], 0])
+    #error = np.abs([0, max_x - x_bound[1], min_y - y_bound[0], max_y - y_bound[1]])
     return error
 
 
