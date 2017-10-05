@@ -32,8 +32,8 @@ if __name__ == '__main__':
     alpha = 1
     path = '../../Kitti/training'
     kittiData = kitti.KITTIObjectsReader(path)
-    print kittiData.getFrameInfo(0)['calibration']
-    sys.exit()
+    #print kittiData.getFrameInfo(0)['calibration']
+    #sys.exit()
     data = Dataset.ImageDataset(path)
     data = Dataset.BatchDataset(data, 1, bins, mode='eval')
     #print 'a'    
@@ -45,9 +45,10 @@ if __name__ == '__main__':
 
     total = 0
     error_lst = []
+    distance_lst = []
     for epoch in range(1):
         for i in range(5000):
-            data.idx = 10
+            #data.idx = 10
             batch, centerAngle, info = data.EvalBatch()
             P = kittiData.getFrameInfo(info['Index'])['calibration'] ['projection_left']
             box_2D = info['Box_2D']
@@ -77,16 +78,17 @@ if __name__ == '__main__':
                 error = abs(360 - error)
             error_lst.append(error)
 
-            #Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim)
-            Translation = Eval.GetTranslation(P, box_2D, info['Ry'], np.array(dimGT))
-            print box_2D, info['Ry'], dimGT
-            print Translation
+            Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim)
+            distance_lst.append(np.linalg.norm(Translation - info['Location']))
+            #Translation = Eval.GetTranslation(P, box_2D, info['Ry'], np.array(dimGT))
+            #print box_2D, info['Ry'], dimGT
+            #print Translation
             #print info['ID']
-            print info['Location']
-            print error
-            print dimGT
-            print dim
-            sys.exit()
+            #print info['Location']
+            #print error
+            #print dimGT
+            #print dim
+            #sys.exit()
             #error = abs(theta - info['LocalAngle'])
             if i % 40 == 0:
                 print '===='
@@ -96,6 +98,9 @@ if __name__ == '__main__':
                 print 'Predict Ry: %ld'%(orientation_estimate)
                 print 'GT dim: ', dimGT
                 print 'Predict dim: ', dim
+                print 'Distance: %lf'%np.linalg.norm(Translation - info['Location'])
                 print '===='
     print 'Mean error: ', np.mean(error_lst)
     print 'Std: ', np.std(error_lst)
+    print 'Mean error', np.mean(distance_lst)
+    print 'Std: ', np.std(distance_lst)

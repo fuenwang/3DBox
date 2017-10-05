@@ -67,12 +67,14 @@ def GetTranslation(P, box, orientation, dimension, init=None):
     
     #x0 = np.zeros(3) + 5
     if init is None:
-        x0 = np.array([-0.72, 1.9, 76.1], np.float)
+        x0 = np.array([10, 10, 10], np.float)
     else:
         x0 = init
     bound = ([-np.inf, -np.inf, 0], [np.inf, np.inf, np.inf])
-    result = least_squares(Error, x0, verbose=2, bounds=bound, args=(P, homo_vertex, x_bound, y_bound, tmp))
-    return result['x']
+    result = least_squares(Error, x0, verbose=0, bounds=bound, args=(P, homo_vertex, x_bound, y_bound, tmp))
+    x = result['x']
+    x[1] += 0.5 * dimension[0]
+    return x
 
 
 if __name__ == '__main__':
@@ -95,7 +97,7 @@ if __name__ == '__main__':
     kitti =  pydriver.datasets.kitti.KITTIObjectsReader('../Kitti/training') 
     
     #data.idx = 35611  #problem !!!!!!!!!!!!!!!
-    data.idx = 25
+    data.idx = 35612
     batch, centerAngle, info = data.EvalBatch()
     print info
     tmp = kitti.getFrameInfo(info['Index'])['calibration']
@@ -109,7 +111,7 @@ if __name__ == '__main__':
     orient = info['Ry']
     dim = info['Dimension']
     GT = info['Location']
-    GT[1] -= 0.5 * dim[0]
+    #GT[1] -= 0.5 * dim[0]
     print 'orient:', orient
     print 'box: ', box_2D
     print 'dim: ', dim
