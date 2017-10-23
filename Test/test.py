@@ -38,7 +38,7 @@ if __name__ == '__main__':
     model.load_state_dict(param)
     model.eval()
 
-    ID = '000012'
+    ID = '000005'
     data = Data.Data(ID)
 
     stop = False
