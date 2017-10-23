@@ -22,7 +22,7 @@ def CreateVertex(dimension):
             ]
     return np.array(vertex, np.float)
 
-def Error(x, P, homo_vertex, x_bound, y_bound, tmp):
+def Error(x, P, homo_vertex, x_bound, y_bound, tmp, xedge, yedge):
     tmp[:, :] = homo_vertex[:, :]
     tmp[:, 0] += x[0]
     tmp[:, 1] += x[1]
@@ -41,13 +41,42 @@ def Error(x, P, homo_vertex, x_bound, y_bound, tmp):
     max_y = np.max(reproject[:, 1])
 
     #error = np.zeros(4, np.float)
-    error = np.abs([min_x - x_bound[0], max_x - x_bound[1], min_y - y_bound[0], max_y - y_bound[1]])
-    #error = np.abs([0, max_x - x_bound[1], min_y - y_bound[0], max_y - y_bound[1]])
+    '''
+    if xedge == 0:
+        xerror = np.abs([min_x - x_bound[0], max_x - x_bound[1]])
+    elif xedge == 1: # left edge
+        xerror = np.abs([0, max_x - x_bound[1]])
+    elif xedge == 2: # right edge
+        xerror = np.abs([min_x - x_bound[0], 0])
+    if yedge == 0:
+        yerror = np.abs([min_y - y_bound[0], max_y - y_bound[1]])
+    elif yedge == 1: # top edge
+        yerror = np.abs([0, max_y - y_bound[1]])
+    elif yedge == 2: # bottom edge
+        yerror = np.abs([min_y - y_bound[0], 0])
+    '''
+    factor = 0
+    factor2 = 1
+    if xedge == 0:
+        xerror = np.abs([min_x - x_bound[0], max_x - x_bound[1]])
+    elif xedge == 1: # left edge 
+        xerror = np.abs([factor * (min_x - x_bound[0]), factor2 * (max_x - x_bound[1])])
+    elif xedge == 2: # right edge
+        xerror = np.abs([factor2 * (min_x - x_bound[0]), factor * (max_x - x_bound[1])])
+
+    if yedge == 0:
+        yerror = np.abs([min_y - y_bound[0], max_y - y_bound[1]])
+    elif yedge == 1: # top edge
+        yerror = np.abs([factor * (min_y - y_bound[0]), factor2 * (max_y - y_bound[1])])
+    elif yedge == 2: # bottom edge
+        yerror = np.abs([factor2 * (min_y - y_bound[0]), factor * (max_y - y_bound[1])])
+
+    error = np.hstack([xerror, yerror])
     return error
 
 
 
-def GetTranslation(P, box, orientation, dimension, init=None):
+def GetTranslation(P, box, orientation, dimension, init=None, imgSize = (375, 1242), verbose = 0):
     #[height, width, length] = dimention
     #[dy, dz, dx] = dimention
     pt1 = box[0]
@@ -67,60 +96,87 @@ def GetTranslation(P, box, orientation, dimension, init=None):
     
     #x0 = np.zeros(3) + 5
     if init is None:
-        x0 = np.array([10, 10, 10], np.float)
+        x0 = np.array([5, 1, 30], np.float)
+        x1 = np.array([-5, 1, 30], np.float)
     else:
         x0 = init
+        x1 = init
+
+    if x_bound[0] == 0:
+        xedge = 1
+    elif x_bound[1] == imgSize[1] - 1:
+        xedge = 2
+    else:
+        xedge = 0
+    if y_bound[0] == 0:
+        yedge = 1
+    elif y_bound[1] == imgSize[0] - 1:
+        yedge = 2
+    else:
+        yedge = 0
+    #yedge = 0
+    #[xedge, yedge] = [0, 0]
     bound = ([-np.inf, -np.inf, 0], [np.inf, np.inf, np.inf])
-    result = least_squares(Error, x0, verbose=0, bounds=bound, args=(P, homo_vertex, x_bound, y_bound, tmp))
+    result = least_squares(Error, x0, verbose=verbose, bounds=bound, method='trf',
+            args=(P, homo_vertex, x_bound, y_bound, tmp, xedge, yedge))
     x = result['x']
+    '''
+    if result['cost'] > 1e-1:
+        result2 =  least_squares(Error, x1, verbose=0, bounds=bound, method='trf',
+            args=(P, homo_vertex, x_bound, y_bound, tmp, xedge, yedge))
+        if result2['cost'] < result['cost']:
+            x = result2['x']
+    '''
     x[1] += 0.5 * dimension[0]
+    #print (xedge, yedge)
     return x
 
 
 if __name__ == '__main__':
-    '''
-    P = np.array(
-            [[  7.18335100e+02,   0.00000000e+00,   6.00389100e+02,   4.45038200e+01],
-             [  0.00000000e+00,   7.18335100e+02,   1.81512200e+02,  -5.95110700e-01],
-             [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00,   2.61631500e-03]]
-        , np.float)
-    box_2D = [(548, 171), (572, 194)]
-    orient = -92.8191628112
-    dim = np.array([1.48, 1.56, 3.62])
-    GT = [-2.72, 0.82, 48.22]
-    print dim
-    print GetTranslation(P, box_2D, orient, dim, init = np.array(GT))
-    print GT
-    '''
     data = Dataset.ImageDataset('../Kitti/training/')
     data = Dataset.BatchDataset(data, mode = 'eval')
     kitti =  pydriver.datasets.kitti.KITTIObjectsReader('../Kitti/training') 
     
     #data.idx = 35611  #problem !!!!!!!!!!!!!!!
-    data.idx = 35612
-    batch, centerAngle, info = data.EvalBatch()
-    print info
-    tmp = kitti.getFrameInfo(info['Index'])['calibration']
-    #print tmp['projection_left']
-    #print tmp['reprojection']
-    #print tmp.keys()
-    P = tmp['projection_left']
-    print P.astype(int)
-    #sys.exit()
-    box_2D = info['Box_2D'] 
-    orient = info['Ry']
-    dim = info['Dimension']
-    GT = info['Location']
-    #GT[1] -= 0.5 * dim[0]
-    print 'orient:', orient
-    print 'box: ', box_2D
-    print 'dim: ', dim
-    print 'GT: ', GT
-    print '=============='
-    #print GetTranslation(P, box_2D, orient, np.array(dim), init = np.array(GT))
-    print GetTranslation(P, box_2D, orient, np.array(dim))
+    lst = []
+    for i in range(5000):
+        #data.idx = 35612
+        #data.idx = 35611
+        batch, centerAngle, info = data.EvalBatch()
+        tmp = kitti.getFrameInfo(info['Index'])
+        #print tmp
+        #exit()
+        #print tmp['labels'][0]
+        #print tmp['projection_left']
+        #print tmp['reprojection']
+        #print tmp.keys()
+        P = tmp['calibration']['projection_left']
+        #print P
+        #print P.astype(int)
+        #sys.exit()
+        box_2D = info['Box_2D'] 
+        orient = info['Ry']
+        dim = info['Dimension']
+        GT = info['Location']
+        predict =  GetTranslation(P, box_2D, orient, np.array(dim), init=np.array(GT), verbose=0)
+        #predict =  GetTranslation(P, box_2D, orient, np.array(dim), verbose=0)
+        error = np.linalg.norm(predict - np.array(GT))
+        lst.append(error)
+        #GT[1] -= 0.5 * dim[0]
+        if i % 10 != 0:
+            continue
+        print '=============='
+        print data.idx - 1
+        print 'orient:', orient
+        print 'box: ', box_2D
+        print 'dim: ', dim
+        print 'GT: ', GT
+        print 'Predict: ',predict
+        print 'Distance: %lf'%np.linalg.norm(predict - np.array(GT))
+        print '=============='
+        #print GetTranslation(P, box_2D, orient, np.array(dim), init = np.array(GT))
 
-
+    print np.mean(lst)
 
 
 

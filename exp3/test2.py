@@ -27,7 +27,7 @@ def Batch2Image(batch):
     return img
 
 if __name__ == '__main__':
-    bins = 2
+    bins = 8
     w = 1
     alpha = 1
     path = '../../Kitti/training'
@@ -76,11 +76,11 @@ if __name__ == '__main__':
             error = abs(orientation_estimate - info['Ry'])
             if error > 180:
                 error = abs(360 - error)
-            error_lst.append(np.cos(np.radians(error)))
-            continue        
-            Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim, init = np.array(info['Location']))
-            #Translation = Eval.GetTranslation(P, box_2D, info['Ry'], np.array(dimGT))
+            error_lst.append(error)
+
+            Translation = Eval.GetTranslation(P, box_2D, orientation_estimate, dim)
             distance_lst.append(np.linalg.norm(Translation - info['Location']))
+            #Translation = Eval.GetTranslation(P, box_2D, info['Ry'], np.array(dimGT))
             #print box_2D, info['Ry'], dimGT
             #print Translation
             #print info['ID']
