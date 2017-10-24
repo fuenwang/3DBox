@@ -76,11 +76,31 @@ class Data:
         batch[:, 2, :, :] = crop_resize[:, :, 0]
         return batch, stop, crop, update_info
     
-    def Update(self, info, orientation, dimension):
+    def Update(self, info, orientation, dimension, conf):
         track_id = info[0]
         frame_id = info[1]
 
-        self.result[track_id][frame_id] = {'orientation':orientation, 'dimension':dimension}
+        self.result[track_id][frame_id] = {'orientation':orientation, 'dimension':dimension, 'confidence': conf}
+
+    def WriteFile(self, f_path):
+        tmp = OrderedDict()
+        #print self.result.keys()
+        for track_id in self.result:
+            for frame_id in self.result[track_id]:
+                if frame_id not in tmp:
+                    tmp[frame_id] = OrderedDict()
+                tmp[frame_id][track_id] = self.result[track_id][frame_id]
+        tmp = OrderedDict(sorted(tmp.items()))
+        with open(f_path, 'w') as f:
+            for frame_id in tmp:
+                for track_id in tmp[frame_id]:
+                    a = tmp[frame_id][track_id]
+                    ori = a['orientation']
+                    dim = a['dimension']
+                    conf = a['confidence']
+                    s = '%s\t%s\t%lf\t%f\t%f\t%f\t%f\n'%(frame_id, track_id, ori, dim[0], dim[1], dim[2], conf)
+                    f.write(s)
+
 
 if __name__ == '__main__':
     data = Data('000001')

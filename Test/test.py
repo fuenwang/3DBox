@@ -38,7 +38,7 @@ if __name__ == '__main__':
     model.load_state_dict(param)
     model.eval()
 
-    ID = '000005'
+    ID = '000012'
     data = Data.Data(ID)
 
     stop = False
@@ -47,20 +47,24 @@ if __name__ == '__main__':
         batch_v = Variable(torch.FloatTensor(batch), requires_grad = False).cuda()
 
         [orient, confi, dim] = model(batch_v)
+        confi = F.softmax(confi)
         orient = orient.cpu().data.numpy()[0, :, :]
         conf = confi.cpu().data.numpy()[0, :]
         dim = dim.cpu().data.numpy()[0, :]
         argmax = np.argmax(conf)
         orient = orient[argmax, :]
+        conf = conf[argmax]
         cos = orient[0]
         sin = orient[1]
         theta = np.arctan2(sin, cos) / np.pi * 180
         theta =  theta + dataset.centerAngle[argmax] / np.pi * 180 
         if theta < 0:
             theta += 360
+        data.Update(info, theta, dim.tolist(), conf)
         print theta
         print dim
-        cv2.namedWindow('GG')
-        cv2.imshow('GG', crop)
-        cv2.waitKey(0)
-
+        print conf
+        #cv2.namedWindow('GG')
+        #cv2.imshow('GG', crop)
+        #cv2.waitKey(0)
+    data.WriteFile('data/%s.txt'%ID)
