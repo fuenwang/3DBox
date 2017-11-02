@@ -14,10 +14,10 @@ def ReadLabel(ID):
             line = line[:-1].split('\t')
             frame_id = line[0]
             track_id = line[1]
-            top_x = int(line[3])
-            top_y = int(line[4])
-            bottom_x = int(line[5])
-            bottom_y = int(line[6])
+            top_x = int(round(float(line[3])))
+            top_y = int(round(float(line[4])))
+            bottom_x = int(round(float(line[5])))
+            bottom_y = int(round(float(line[6])))
 
             top = (top_x, top_y)
             bottom = (bottom_x, bottom_y)
@@ -103,7 +103,7 @@ class Data:
 
 
 if __name__ == '__main__':
-    data = Data('000001')
+    data = Data('000005')
 
     stop = False
     #data.now_track = 3
